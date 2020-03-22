@@ -1,0 +1,144 @@
+---
+title: "Bootstrap Confidence Intervals"
+subtitle: "Part II"
+author: ""
+date: ""
+output: 
+  html_document:
+    toc: false
+    number_sections: false
+    df_print: paged
+---
+
+```{r set-up, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      comment = "#>", highlight = TRUE,
+                      fig.align = "center")
+```
+
+# Packages and Data
+
+```{r packages}
+library(tidyverse)
+library(infer)
+```
+
+The data is from https://archive.ics.uci.edu/ml/datasets/Liver+Disorders.
+
+Each observation in the dataset constitutes the record of a male 
+individual. The first 5 variables are all blood tests which are thought to be 
+sensitive to liver disorders that might arise from excessive alcohol 
+consumption. The last variable is meaningless, and we will drop it once we
+assign variable names.
+
+Read in the data directly from the site with `read_delim()`. Function
+`str_c()` (from `stringr` in `tidyverse`) is for string concatenation and 
+allows us to break up long strings. This is a nice way to keep your code 
+within 80 characters.
+
+```{r read_data}
+liver <- read_delim(str_c("https://archive.ics.uci.edu/ml/",
+                          "machine-learning-databases/liver-disorders/",
+                          "bupa.data"), 
+                    delim = ",", col_names = FALSE)
+```
+
+**Feature Information (as given in the data):**
+
+1. `mcv` mean corpuscular volume
+2. `alkphos` alkaline phosphotase
+3. `sgpt` alanine aminotransferase
+4. `sgot` aspartate aminotransferase
+5. `gammagt` gamma-glutamyl transpeptidase
+6. `drink_qty` number of half-pint equivalents of alcoholic beverages drunk per day
+7. selector field created by the BUPA researchers to split the data into 
+   train/test sets
+   
+Let's set the variable names in the tibble and drop the last variable. 
+
+```{r parse_data}
+liver <- liver %>% 
+  select(mcv = X1, alkphos = X2, sgpt = X3, sgot = X4, gammagt = X5, 
+         drink_qty = X6) %>% 
+  mutate(drink = if_else(drink_qty > 2, "yes", "no"),
+         drink = factor(drink))
+```
+
+We created a new variable, `drink`, using `mutate()`. What does it mean?
+
+```{r preview_data}
+liver
+```
+
+
+# Exercises
+
+## Part 1
+
+#### Exercise 1
+
+Use the sample data to create a 96% confidence interval for the mean 
+corpuscular volume for all males. What assumptions must you make?
+
+#### Exercise 2
+
+Write out an interpretation of your interval from Exercise 1.
+
+## Part 2
+
+Your goal will now be to create a 96% confidence interval for the mean 
+difference in corpuscular volume for those males that have more than 2 drinks 
+per day and those that don't. Define the difference as more than 2 drinks minus 
+those with less than or equal to 2 drinks.
+
+#### Exercise 3
+
+Before you get started, consult 
+https://infer.netlify.com/articles/flights_examples.html#one-numerical-variable-one-categorical-2-levels-diff-in-means-1
+
+What do you need to change in `specify()` and `calculate()`?
+
+#### Exercise 4
+
+Plot the bootstrapped sampling distribution for the difference in
+means. Comment on what you observe.
+
+```{r echo=FALSE, eval=FALSE}
+boot_dist <- liver %>% 
+  specify(mcv ~ drink) %>% 
+  generate(reps = 1000, type = "bootstrap") %>% 
+  calculate(stat = "diff in means", order = c("yes", "no"))
+```
+
+```{r echo=FALSE, eval=FALSE}
+visualise(boot_dist)
+```
+
+#### Exercise 5
+
+Create a **96%** confidence interval for the mean 
+difference in corpuscular volume for those males that have more than 2 drinks 
+per day and those that don't.
+
+```{r echo=FALSE, eval=FALSE}
+boot_dist %>% 
+    summarize(lb = quantile(stat, .02),
+              ub = quantile(stat, .98))
+```
+
+#### Exercise 6
+
+Write out an interpretation of your interval from Exercise 5.
+
+# Stage, commit and push
+
+1. Stage your modified files.
+2. Commit your changes with an informative message.
+3. Push your changes to your GitHub repo.
+4. Verify your files were updated on GitHub.
+
+# References
+
+1. UCI Machine Learning Repository: Liver Disorders Data Set. (2020). 
+   Archive.ics.uci.edu. Retrieved 9 March 2020, from 
+   https://archive.ics.uci.edu/ml/datasets/Liver+Disorders
